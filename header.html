@@ -1,0 +1,84 @@
+<script id="Class It">
+    /* eslint-disable indent */
+    /* eslint-disable prefer-const */
+    document.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+
+  function processCommand(element, command) {
+      if (command.addClass) {
+        let classes = Array.isArray(command.addClass) ? command.addClass : [command.addClass];
+      classes.forEach(c => element.classList.add(c));
+    }
+
+      if (command.removeClass) {
+        let classes = Array.isArray(command.removeClass) ? command.removeClass : [command.removeClass];
+      classes.forEach(c => element.classList.remove(c));
+    }
+
+      if (command.addData) {
+        let dataAttributes = Array.isArray(command.addData) ? command.addData : [command.addData];
+      dataAttributes.forEach(attr => {
+          for (let key in attr) {
+            element.dataset[key] = attr[key];
+        }
+        });
+    }
+
+      if (command.removeData) {
+        let dataAttributes = Array.isArray(command.removeData) ? command.removeData : [command.removeData];
+      dataAttributes.forEach(attr => {
+          delete element.dataset[attr];
+      });
+    }
+    }
+
+    function processElement(element) {
+      let id = element.id;
+    let jsonMatch = id.match(/(\{.*\}|\[.*\])/);
+
+    if (jsonMatch) {
+        let jsonString = jsonMatch[0];
+      let newId = id.replace(jsonString, '').trim();
+
+      // if newId is empty, remove the id attribute
+      if (newId === '') {
+          element.removeAttribute('id');
+      } else {
+          element.id = newId;
+      }
+
+        let commands;
+      try {
+          commands = JSON.parse(jsonString);
+      } catch (error) {
+          console.error('Invalid JSON in element ID:', jsonString);
+        return;
+      }
+
+        if (Array.isArray(commands)) {
+          commands.forEach(command => processCommand(element, command));
+      } else {
+          processCommand(element, commands);
+      }
+      }
+    }
+
+    function processAllElements() {
+      document.querySelectorAll('[id]').forEach(processElement);
+  }
+
+    // Run once on page load.
+    processAllElements();
+
+  // Set up MutationObserver to re-run whenever the DOM changes.
+  let observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList' || (mutation.type === 'attributes' && mutation.attributeName === 'id')) {
+          processAllElements();
+      }
+      });
+  });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+  });
+  </script>
+  
